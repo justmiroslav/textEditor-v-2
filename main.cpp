@@ -1,7 +1,6 @@
 #include <iostream>
 #include <fstream>
 #include <string>
-#include <stack>
 using namespace std;
 
 class TextEditor {
@@ -46,7 +45,7 @@ public:
         }
     }
 
-    void insertText(int line, int index, const string &newText) {
+    void insertText(int line, int index, const string &newText, bool replaceMode) {
         if (line < 0 || line >= text.length()) {
             cout << "Error: Invalid line" << endl;
         }
@@ -64,6 +63,9 @@ public:
         }
         if (index < 0 || index > lineEnd) {
             cout << "Error: Invalid index" << endl;
+        }
+        if (replaceMode) {
+            text.erase(i + index, newText.length());
         }
         text.insert(i + index, newText);
     }
@@ -176,13 +178,20 @@ int main() {
             cin.ignore();
             cout << "Enter text to insert:" << endl;
             getline(cin, input);
-            textEditor.insertText(line, index, input);
+            textEditor.insertText(line, index, input, false);
         } else if (command == 7) {
             cout << "Enter text to search:" << endl;
             cin.ignore();
             getline(cin, input);
             textEditor.searchText(input);
-        } else if (command == 8) {
+        } else if (command == 14) {
+            cout << "Enter the line and index:" << endl;
+            cin >> line >> index;
+            cin.ignore();
+            cout << "Enter text to insert:" << endl;
+            getline(cin, input);
+            textEditor.insertText(line, index, input, true);
+        } else if (command == 15) {
             cout << "The end" << endl;
             break;
         } else {
