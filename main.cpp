@@ -60,7 +60,7 @@ public:
         }
     }
 
-    bool performTextAction(int line, int index, const string &newText, bool replaceMode, int numOfSymbols = 0) {
+    bool performTextAction(int line, int index, const string &newText, bool replaceMode, int numOfSymbols = 0, bool copy = false) {
         if (line < 0 || line >= text.length()) {
             cout << "Error: Invalid line" << endl;
             return false;
@@ -83,7 +83,11 @@ public:
         }
 
         if (numOfSymbols > 0 && numOfSymbols <= lineEnd - (i + index)) {
-            text.erase(i + index, numOfSymbols);
+            if (copy) {
+                copiedText = text.substr(i + index, numOfSymbols);
+            } else {
+                text.erase(i + index, numOfSymbols);
+            }
         }
 
         if (!newText.empty()) {
@@ -136,9 +140,29 @@ public:
         performTextAction(line, index, "", false, numOfSymbols);
     }
 
+    void cutText(int line, int index, int numOfSymbols, bool copy) {
+        copyText(line, index, numOfSymbols, copy);
+        undoStack.push(text);
+        deleteText(line, index, numOfSymbols);
+    }
+
+    void pasteText(int line, int index) {
+        if (copiedText.empty()) {
+            cout << "Error: Nothing to paste" << endl;
+            return;
+        }
+        undoStack.push(text);
+        insertText(line, index, copiedText, false);
+    }
+
+    void copyText(int line, int index, int numOfSymbols, bool copy) {
+        performTextAction(line, index, "", false, numOfSymbols, copy);
+    }
+
 private:
     string text;
     string fileText;
+    string copiedText;
     stack<string> undoStack;
     stack<string> redoStack;
 };
@@ -266,6 +290,18 @@ int main() {
             undoRedoManager.undo(textEditor);
         } else if (command == 10) {
             undoRedoManager.redo(textEditor);
+        } else if (command == 11) {
+            cout << "Enter the line, index, and number of symbols to cut:" << endl;
+            cin >> line >> index >> numOfSymbols;
+            textEditor.cutText(line, index, numOfSymbols, true);
+        } else if (command == 12) {
+            cout << "Enter the line and index:" << endl;
+            cin >> line >> index;
+            textEditor.pasteText(line, index);
+        } else if (command == 13) {
+            cout << "Enter the line, index, and number of symbols to copy:" << endl;
+            cin >> line >> index >> numOfSymbols;
+            textEditor.copyText(line, index, numOfSymbols, true);
         } else if (command == 14) {
             cout << "Enter the line and index:" << endl;
             cin >> line >> index;
