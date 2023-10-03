@@ -60,10 +60,10 @@ public:
         }
     }
 
-    void insertText(int line, int index, const string &newText, bool replaceMode) {
-        undoStack.push(text);
+    bool performTextAction(int line, int index, const string &newText, bool replaceMode, int numOfSymbols = 0) {
         if (line < 0 || line >= text.length()) {
             cout << "Error: Invalid line" << endl;
+            return false;
         }
         int currentLine = 0;
         int i = 0;
@@ -79,11 +79,26 @@ public:
         }
         if (index < 0 || index > lineEnd) {
             cout << "Error: Invalid index" << endl;
+            return false;
         }
-        if (replaceMode) {
-            text.erase(i + index, newText.length());
+
+        if (numOfSymbols > 0 && numOfSymbols <= lineEnd - (i + index)) {
+            text.erase(i + index, numOfSymbols);
         }
-        text.insert(i + index, newText);
+
+        if (!newText.empty()) {
+            if (replaceMode) {
+                text.erase(i + index, newText.length());
+            }
+            text.insert(i + index, newText);
+        }
+
+        return true;
+    }
+
+    void insertText(int line, int index, const string &newText, bool replaceMode) {
+        undoStack.push(text);
+        performTextAction(line, index, newText, replaceMode);
     }
 
     void searchText(const string &searchText) {
@@ -114,6 +129,11 @@ public:
         if (!correctWord) {
             cout << "Text not found" << endl;
         }
+    }
+
+    void deleteText(int line, int index, int numOfSymbols) {
+        undoStack.push(text);
+        performTextAction(line, index, "", false, numOfSymbols);
     }
 
 private:
@@ -199,7 +219,7 @@ int main() {
     UndoRedoManager undoRedoManager;
     FileManager fileManager;
 
-    int command, line, index, printChoice;
+    int command, line, index, printChoice, numOfSymbols;
     string input, filename;
     while (true) {
         cout << "Enter the command:" << endl;
@@ -238,6 +258,10 @@ int main() {
             cin.ignore();
             getline(cin, input);
             textEditor.searchText(input);
+        } else if (command == 8) {
+            cout << "Enter the line, index and number of symbols to delete:" << endl;
+            cin >> line >> index >> numOfSymbols;
+            textEditor.deleteText(line, index, numOfSymbols);
         } else if (command == 9) {
             undoRedoManager.undo(textEditor);
         } else if (command == 10) {
