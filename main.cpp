@@ -1,12 +1,25 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <stack>
 using namespace std;
 
 class TextEditor {
 public:
     string getText() {
         return text;
+    }
+
+    void setText(const string& newText) {
+        text = newText;
+    }
+
+    stack<string>& getUndoStack() {
+        return undoStack;
+    }
+
+    stack<string>& getRedoStack() {
+        return redoStack;
     }
 
     void clearFileText() {
@@ -18,10 +31,12 @@ public:
     }
 
     void appendText(const string &newText) {
+        undoStack.push(text);
         text += newText;
     }
 
     void newLine() {
+        undoStack.push(text);
         text.push_back('\n');
     }
 
@@ -46,6 +61,7 @@ public:
     }
 
     void insertText(int line, int index, const string &newText, bool replaceMode) {
+        undoStack.push(text);
         if (line < 0 || line >= text.length()) {
             cout << "Error: Invalid line" << endl;
         }
@@ -103,6 +119,8 @@ public:
 private:
     string text;
     string fileText;
+    stack<string> undoStack;
+    stack<string> redoStack;
 };
 
 class FileManager {
@@ -139,10 +157,46 @@ public:
     }
 };
 
+class UndoRedoManager {
+public:
+    void undo(TextEditor &textEditor) {
+        if (!textEditor.getUndoStack().empty()) {
+            if (textEditor.getUndoStack().size() > 3) {
+                for (int i = 0; i < 3; i++) {
+                    textEditor.getRedoStack().push(textEditor.getText());
+                    textEditor.setText(textEditor.getUndoStack().top());
+                    textEditor.getUndoStack().pop();
+                }
+                cout << "Undo successful" << endl;
+            } else {
+                while (!textEditor.getUndoStack().empty()) {
+                    textEditor.getRedoStack().push(textEditor.getText());
+                    textEditor.setText(textEditor.getUndoStack().top());
+                    textEditor.getUndoStack().pop();
+                }
+                cout << "Undo successful for all commands" << endl;
+            }
+        } else {
+            cout << "Nothing to undo" << endl;
+        }
+    }
 
+    void redo(TextEditor &textEditor) {
+        if (!textEditor.getRedoStack().empty()) {
+            while (!textEditor.getRedoStack().empty()) {
+                textEditor.setText(textEditor.getRedoStack().top());
+                textEditor.getRedoStack().pop();
+            }
+            cout << "Redo successful" << endl;
+        } else {
+            cout << "Nothing to redo" << endl;
+        }
+    }
+};
 
 int main() {
     TextEditor textEditor;
+    UndoRedoManager undoRedoManager;
     FileManager fileManager;
 
     int command, line, index, printChoice;
@@ -184,6 +238,10 @@ int main() {
             cin.ignore();
             getline(cin, input);
             textEditor.searchText(input);
+        } else if (command == 9) {
+            undoRedoManager.undo(textEditor);
+        } else if (command == 10) {
+            undoRedoManager.redo(textEditor);
         } else if (command == 14) {
             cout << "Enter the line and index:" << endl;
             cin >> line >> index;
